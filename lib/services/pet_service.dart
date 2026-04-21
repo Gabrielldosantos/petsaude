@@ -20,7 +20,6 @@ class PetService {
       path,
       version: 1,
       onCreate: (db, version) async {
-        // TABELA PETS
         await db.execute('''
           CREATE TABLE pets(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,7 +28,6 @@ class PetService {
           )
         ''');
 
-        // TABELA CONSULTAS
         await db.execute('''
           CREATE TABLE consultas(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,8 +40,6 @@ class PetService {
     );
   }
 
-  // ================= PET =================
-
   Future<void> insertPet(Pet pet) async {
     final db = await database;
     await db.insert('pets', pet.toMap());
@@ -52,11 +48,8 @@ class PetService {
   Future<List<Pet>> getPets() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('pets');
-
     return maps.map((e) => Pet.fromMap(e)).toList();
   }
-
-  // ================= CONSULTA =================
 
   Future<void> insertConsulta(Consulta consulta) async {
     final db = await database;
@@ -66,7 +59,6 @@ class PetService {
   Future<List<Consulta>> getConsultas() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('consultas');
-
     return maps.map((e) => Consulta.fromMap(e)).toList();
   }
 }

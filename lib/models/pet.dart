@@ -3,7 +3,11 @@ class Pet {
   String nome;
   String tipo;
 
-  Pet({this.id, required this.nome, required this.tipo});
+  Pet({
+    this.id,
+    required this.nome,
+    required this.tipo,
+  });
 
   Map<String, dynamic> toMap() {
     return {

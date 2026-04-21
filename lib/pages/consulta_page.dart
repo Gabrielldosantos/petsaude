@@ -27,7 +27,7 @@ class _ConsultaPageState extends State<ConsultaPage> {
       SnackBar(content: Text("Consulta salva")),
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override
@@ -38,9 +38,18 @@ class _ConsultaPageState extends State<ConsultaPage> {
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(controller: petController, decoration: InputDecoration(labelText: "Pet")),
-            TextField(controller: dataController, decoration: InputDecoration(labelText: "Data")),
-            TextField(controller: descController, decoration: InputDecoration(labelText: "Descrição")),
+            TextField(
+              controller: petController,
+              decoration: InputDecoration(labelText: "Nome do Pet"),
+            ),
+            TextField(
+              controller: dataController,
+              decoration: InputDecoration(labelText: "Data"),
+            ),
+            TextField(
+              controller: descController,
+              decoration: InputDecoration(labelText: "Descrição"),
+            ),
             SizedBox(height: 20),
             ElevatedButton(onPressed: salvar, child: Text("Salvar")),
           ],
