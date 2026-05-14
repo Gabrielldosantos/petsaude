@@ -6,4 +6,11 @@ class LoginResponse {
     required this.token,
     required this.message,
   });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    return LoginResponse(
+      token: json['token'] ?? '',
+      message: json['message'] ?? 'Login realizado com sucesso',
+    );
+  }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:petsaude/pages/cadastro_pet_page.dart';
 import 'package:petsaude/pages/consulta_page.dart';
+import 'package:petsaude/pages/ia_chat_page.dart';
 import 'package:petsaude/services/pet_service.dart';
 import 'package:petsaude/services/auth_service.dart';
+import 'package:petsaude/services/session_service.dart';
 import 'package:petsaude/models/pet.dart';
 import 'package:petsaude/models/consulta.dart';
 
@@ -17,7 +19,48 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'PetSaúde',
-      home: LoginPage(),
+      home: SplashPage(),
+    );
+  }
+}
+
+// ================= SPLASH / SESSÃO =================
+class SplashPage extends StatefulWidget {
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  final SessionService sessionService = SessionService();
+
+  @override
+  void initState() {
+    super.initState();
+    verificarSessao();
+  }
+
+  void verificarSessao() async {
+    final token = await sessionService.recuperarToken();
+
+    await Future.delayed(Duration(seconds: 2));
+
+    if (token != null && token.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -34,6 +77,7 @@ class _LoginPageState extends State<LoginPage>
   final TextEditingController senhaController = TextEditingController();
 
   final AuthService authService = AuthService();
+  final SessionService sessionService = SessionService();
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -76,6 +120,8 @@ class _LoginPageState extends State<LoginPage>
     );
 
     if (resultado != null) {
+      await sessionService.salvarToken(resultado.token);
+
       setState(() {
         token = resultado.token;
         carregando = false;
@@ -85,7 +131,7 @@ class _LoginPageState extends State<LoginPage>
         SnackBar(content: Text(resultado.message)),
       );
 
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => HomePage()),
       );
@@ -172,10 +218,10 @@ class _LoginPageState extends State<LoginPage>
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        'Token JWT: $token',
+                        'Token JWT salvo com sucesso',
                         style: TextStyle(
                           color: Colors.green,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -230,6 +276,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final petService = PetService();
+  final sessionService = SessionService();
 
   List<Pet> pets = [];
   List<Consulta> consultas = [];
@@ -255,10 +302,34 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void sair() async {
+    await sessionService.logout();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => LoginPage()),
+    );
+  }
+
+  void abrirIaChat() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => IaChatPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Meus Pets e Consultas")),
+      appBar: AppBar(
+        title: Text("Meus Pets e Consultas"),
+        actions: [
+          IconButton(
+            onPressed: sair,
+            icon: Icon(Icons.logout),
+          ),
+        ],
+      ),
       body: Padding(
         padding: EdgeInsets.all(10),
         child: Column(
@@ -268,9 +339,7 @@ class _HomePageState extends State<HomePage> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => CadastroPetPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => CadastroPetPage()),
                 );
 
                 if (result == true) {
@@ -284,15 +353,18 @@ class _HomePageState extends State<HomePage> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => ConsultaPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => ConsultaPage()),
                 );
 
                 if (result == true) {
                   await carregarConsultas();
                 }
               },
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              child: Text("IA Chat"),
+              onPressed: abrirIaChat,
             ),
             SizedBox(height: 20),
             Text(

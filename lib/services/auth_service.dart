@@ -1,17 +1,34 @@
-import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/login_response.dart';
 
 class AuthService {
   Future<LoginResponse?> login(String email, String senha) async {
-    await Future.delayed(Duration(seconds: 2));
-
-    if (email == 'gabriel@gmail.com' && senha == '123456') {
-      return LoginResponse(
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake.token.assinatura',
-        message: 'Login realizado com sucesso',
+    try {
+      final response = await http.post(
+        Uri.parse('https://dummyjson.com/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'username': email,
+          'password': senha,
+          'expiresInMins': 60,
+        }),
       );
-    }
 
-    return null;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        return LoginResponse(
+          token: data['accessToken'],
+          message: 'Login realizado com sucesso via API',
+        );
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 }
