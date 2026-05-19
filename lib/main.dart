@@ -4,6 +4,7 @@ import 'package:petsaude/pages/consulta_page.dart';
 import 'package:petsaude/pages/ia_chat_page.dart';
 import 'package:petsaude/services/pet_service.dart';
 import 'package:petsaude/services/auth_service.dart';
+import 'package:petsaude/services/user_service.dart';
 import 'package:petsaude/services/session_service.dart';
 import 'package:petsaude/models/pet.dart';
 import 'package:petsaude/models/consulta.dart';
@@ -79,6 +80,8 @@ class _LoginPageState extends State<LoginPage>
   final AuthService authService = AuthService();
   final SessionService sessionService = SessionService();
 
+  final UserService userService = UserService();
+
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -99,49 +102,76 @@ class _LoginPageState extends State<LoginPage>
     _controller.forward();
   }
 
-  void validarLogin() async {
+void validarLogin() async {
+  setState(() {
+    erro = '';
+    token = '';
+    carregando = true;
+  });
+
+  if (emailController.text.isEmpty || senhaController.text.isEmpty) {
     setState(() {
-      erro = '';
-      token = '';
-      carregando = true;
+      erro = 'Preencha todos os campos';
+      carregando = false;
+    });
+    return;
+  }
+
+  final loginCadastrado = await userService.validarLogin(
+    emailController.text,
+    senhaController.text,
+  );
+
+  if (loginCadastrado) {
+    const tokenGerado = 'token_usuario_cadastrado_jwt_fake';
+
+    await sessionService.salvarToken(tokenGerado);
+
+    setState(() {
+      token = tokenGerado;
+      carregando = false;
     });
 
-    if (emailController.text.isEmpty || senhaController.text.isEmpty) {
-      setState(() {
-        erro = 'Preencha todos os campos';
-        carregando = false;
-      });
-      return;
-    }
-
-    final resultado = await authService.login(
-      emailController.text,
-      senhaController.text,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Login realizado com usuário cadastrado')),
     );
 
-    if (resultado != null) {
-      await sessionService.salvarToken(resultado.token);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomePage()),
+    );
 
-      setState(() {
-        token = resultado.token;
-        carregando = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultado.message)),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomePage()),
-      );
-    } else {
-      setState(() {
-        erro = 'Email ou senha inválidos';
-        carregando = false;
-      });
-    }
+    return;
   }
+
+  final resultado = await authService.login(
+    emailController.text,
+    senhaController.text,
+  );
+
+  if (resultado != null) {
+    await sessionService.salvarToken(resultado.token);
+
+    setState(() {
+      token = resultado.token;
+      carregando = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(resultado.message)),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomePage()),
+    );
+  } else {
+    setState(() {
+      erro = 'Email ou senha inválidos';
+      carregando = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +283,6 @@ class _LoginPageState extends State<LoginPage>
                     child: Text('Criar conta'),
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    'Teste da API simulada:\nEmail: gabriel@gmail.com\nSenha: 123456',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                  ),
                 ],
               ),
             ),
@@ -454,7 +479,9 @@ class CadastroPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController senhaController = TextEditingController();
 
-  void cadastrar(BuildContext context) {
+  final UserService userService = UserService();
+
+  void cadastrar(BuildContext context) async {
     if (nomeController.text.isEmpty ||
         emailController.text.isEmpty ||
         senhaController.text.isEmpty) {
@@ -462,9 +489,16 @@ class CadastroPage extends StatelessWidget {
         SnackBar(content: Text('Preencha todos os campos')),
       );
     } else {
+      await userService.cadastrarUsuario(
+        nomeController.text,
+        emailController.text,
+        senhaController.text,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cadastro realizado com sucesso')),
       );
+
       Navigator.pop(context);
     }
   }

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/login_response.dart';
 
 class AuthService {
-  Future<LoginResponse?> login(String email, String senha) async {
+  Future<LoginResponse?> login(String usuario, String senha) async {
     try {
       final response = await http.post(
         Uri.parse('https://dummyjson.com/auth/login'),
@@ -11,7 +11,7 @@ class AuthService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'username': email,
+          'username': usuario,
           'password': senha,
           'expiresInMins': 60,
         }),
